@@ -1,0 +1,18 @@
+experiment_name: "healthcare-model"
+compute_name: "healthcare-cluster"
+environment_name: "healthcare-env"
+
+model:
+  name: "healthcare-readmission-model"
+  version: "1.0.0"
+  description: "Healthcare Readmission Prediction model"
+
+data:
+  train_data: "data/train.csv"
+  test_data: "data/test.csv"
+  validation_data: "data/validation.csv"
+
+hyperparameters:
+  learning_rate: 0.01
+  max_depth: 5
+  n_estimators: 100

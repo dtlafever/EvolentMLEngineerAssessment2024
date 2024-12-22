@@ -1,0 +1,27 @@
+azure-ai-ml
+azureml-core
+azureml-mlflow
+# manage mltable data assets
+mltable
+azureml-dataprep[pandas]
+
+# config
+python-decouple
+
+# data models
+pydantic
+
+# data science
+scikit-learn
+pandas
+polars
+mlflow
+xgboost
+# matplotlib
+seaborn
+marimo
+
+# local backend API
+fastapi[standard]
+
+PyYAML  # Required for MLflow
