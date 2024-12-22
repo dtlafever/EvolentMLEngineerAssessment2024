@@ -11,6 +11,7 @@ app = FastAPI()
 
 # Define the input data schema
 class PredictionInput(BaseModel):
+    # TODO: define Model Input here or pull from model signature
     features: List[dict]
 
 
