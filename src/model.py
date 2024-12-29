@@ -13,6 +13,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from typing import List, Dict, Union, Optional
 import logging
+from sklearn.model_selection import GridSearchCV
 
 
 class ColumnRemapper(BaseEstimator, TransformerMixin):
@@ -48,6 +49,7 @@ class MLflowModel(BaseEstimator):
             numeric_features: List[str],
             categorical_features: List[str],
             target_col: str,
+            grid_params: Optional[Dict[str, Dict[str, List[Union[int, float, str]]]]] = None,
             problem_type: str = 'regression',
             feature_engineering_steps: Optional[List[tuple]] = None,
             column_mapping: Optional[Dict[str, Dict[str, str]]] = None,
@@ -74,6 +76,7 @@ class MLflowModel(BaseEstimator):
         self.target_col = target_col
         self.problem_type = problem_type
         self.feature_engineering_steps = feature_engineering_steps or []
+        self.grid_params = grid_params
         self.column_mapping = column_mapping or {}
 
         self.pipeline = self._create_pipeline()
@@ -188,7 +191,21 @@ class MLflowModel(BaseEstimator):
         # with mlflow.start_run(experiment_id=self.experiment_id):
         try:
             # fit the pipeline create the model signature
-            self.pipeline.fit(data, outcome_data)
+            if self.grid_params:
+                grid_search = GridSearchCV(
+                    estimator=self.pipeline,
+                    param_grid=self.grid_params,
+                    cv=5,
+                    scoring='neg_mean_squared_error' if self.problem_type == 'regression' else 'accuracy',
+                    verbose=1
+                )
+                grid_search.fit(data, outcome_data)
+                self.pipeline = grid_search.best_estimator_
+                best_params = grid_search.best_params_
+                self._log_parameters(best_params)
+                self.logger.info(f"Grid search completed successfully. Best parameters: {best_params}")
+            else:
+                self.pipeline.fit(data, outcome_data)
             self.signature = infer_signature(data, self.pipeline.predict(data))
 
             # Log parameters

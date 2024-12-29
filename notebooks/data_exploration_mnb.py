@@ -13,7 +13,9 @@ def _():
     import seaborn as sns
     from scipy import stats
     from pydantic import BaseModel
-    return BaseModel, mo, np, pd, plt, sns, stats
+
+    from pathlib import Path
+    return BaseModel, Path, mo, np, pd, plt, sns, stats
 
 
 @app.cell
@@ -268,9 +270,9 @@ def _(mo):
 
 
 @app.cell
-def _(pd):
+def _(Path, pd):
     # Load the data
-    data_filename = '../data/hospital_readmissions.parquet'
+    data_filename = Path('data/hospital_readmissions.parquet')
     df = pd.read_parquet(data_filename)
 
     # drop useless field

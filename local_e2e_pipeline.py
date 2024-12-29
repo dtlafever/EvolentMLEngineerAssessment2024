@@ -1,10 +1,10 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from src.model import MLflowModel
 import mlflow
-from xgboost import XGBClassifier
+from xgboost.sklearn import XGBClassifier
 
 def main():
     # path to dataset
@@ -46,6 +46,33 @@ def main():
         "XGBoost": XGBClassifier(random_state=42, eval_metric="logloss")
     }
 
+    param_grids = {
+        'RandomForest': {
+            'n_estimators': [100, 200, 500],
+            'max_depth': [10, 20, None],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4]
+        },
+        'GradientBoosting': {
+            'n_estimators': [100, 200, 500],
+            'learning_rate': [0.01, 0.1, 0.2],
+            'max_depth': [3, 5, 10],
+            'subsample': [0.8, 1.0]
+        },
+        'LogisticRegression': {
+            'C': [0.01, 0.1, 1.0, 10],
+            'penalty': ['l1', 'l2'],
+            'solver': ['liblinear']
+        },
+        'XGBoost': {
+            'n_estimators': [100, 200, 500],
+            'learning_rate': [0.01, 0.1, 0.2],
+            'max_depth': [3, 5, 7],
+            'subsample': [0.8, 1.0],
+            'colsample_bytree': [0.8, 1.0]
+        }
+    }
+
     # Initialize the model wrapper
     model_wrapper = MLflowModel(
         model=RandomForestClassifier(),
@@ -55,7 +82,8 @@ def main():
         target_col=target_col,
         problem_type='classification',
         feature_engineering_steps=None,
-        column_mapping=None
+        column_mapping=None,
+        grid_params=param_grids
     )
 
     # split to train and test
@@ -66,10 +94,29 @@ def main():
     test_outcome = test_outcome.apply(lambda x: 1 if x == "Yes" else 0)
 
     for model_type, model in models_to_test.items():
+        # print(f"Performing Grid Search for {model_type}...")
+        # grid = param_grids.get(model_type, None)
+        #
+        # if grid:  # If a hyperparameter grid is defined for the model
+        #     grid_search = GridSearchCV(
+        #         estimator=model,
+        #         param_grid=grid,
+        #         scoring='accuracy',  # Change this depending on your metric
+        #         n_jobs=-1,
+        #         cv=3  # 3-fold cross-validation
+        #     )
+        #     grid_search.fit(train_data, train_outcome)
+        #     best_model = grid_search.best_estimator_
+        #     print(f"Best parameters for {model_type}: {grid_search.best_params_}")
+        # else:
+        #     print(f"No hyperparameter grid specified for {model_type}. Using default model.")
+        #     best_model = model
+
         print(f"Training {model_type} model...")
         run_name = f"{model_type}-{model_name}"
         run_name_path = f"./models/{run_name}"
         with mlflow.start_run(run_name=run_name):
+            # model_wrapper.set_model(best_model)
             model_wrapper.set_model(model)
             # Train the model
             model_wrapper.fit(train_data, train_outcome)
